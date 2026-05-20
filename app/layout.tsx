@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import ChatbotWidget from "@/components/chatbot/ChatbotWidget";
 
 export const metadata: Metadata = {
   title: { default: "Plearn — เรียนเพลิน เก่งจริงในงานที่ทำ", template: "%s | Plearn" },
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="th" suppressHydrationWarning>
       <body style={{ background: "var(--cream)", color: "var(--ink)" }}>
         {children}
+        <ChatbotWidget />
       </body>
     </html>
   );

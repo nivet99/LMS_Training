@@ -147,6 +147,20 @@
 
 ---
 
+### Module 16 — AI Chatbot Assistant ✅ (2026-05-20)
+
+- [x] `components/chatbot/ChatbotWidget.tsx` — FAB (robot icon) + chat panel, fixed bottom-right
+- [x] `components/chatbot/chatbot-logic.ts` — keyword matching engine (token-based, strips Thai intent words)
+- [x] Mounted globally in `app/layout.tsx`
+- [x] Course search: name, category, slug, instructor, description (token OR logic)
+- [x] Filters: ฟรี, ยอดนิยม, ใหม่, มือใหม่/กลาง/ขั้นสูง, ราคา, ดูทั้งหมด
+- [x] On-site info: PIM (สถาบันปัญญาภิวัฒน์) address + MRT directions + opening hours
+- [x] Fixed: "ช่วย" no longer intercepts course search queries
+- [x] Fixed: multi-word Thai queries (e.g. "คอร์ส python", "อยากเรียน UX") work correctly
+- [ ] Phase 2: replace mock data search with Meilisearch or Claude API (vector search)
+
+---
+
 ### Payments & Enrollment (Module 7)
 - [ ] ติดตั้ง `stripe`
 - [ ] Server Action `createCheckoutSession()` → Stripe Checkout
