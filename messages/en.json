@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "courses": "All Courses",
+    "instructors": "Instructors",
+    "pricing": "Pricing",
+    "login": "Log In",
+    "signup": "Get Started"
+  },
+  "home": {
+    "hero_title": "Learn joyfully. Master truly.",
+    "hero_subtitle": "High-quality online courses from real-world experts.",
+    "cta_start": "Start for Free",
+    "cta_pricing": "View Pricing"
+  },
+  "course": {
+    "enroll": "Enroll Now",
+    "free_enroll": "Enroll Free",
+    "try_free": "Try for Free",
+    "bestseller": "Bestseller",
+    "new": "New",
+    "free": "Free",
+    "lessons": "lessons",
+    "duration": "Duration",
+    "level": "Level",
+    "students": "students"
+  },
+  "dashboard": {
+    "welcome_back": "Welcome back",
+    "continue_learning": "Continue Learning",
+    "recommended": "Recommended for You",
+    "streak": "day streak",
+    "xp": "XP earned",
+    "certificates": "Certificates"
+  },
+  "auth": {
+    "login": "Log In",
+    "signup": "Sign Up",
+    "forgot_password": "Forgot Password",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full Name",
+    "or_email": "Or use Email"
+  }
+}

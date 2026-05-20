@@ -1,0 +1,333 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Google Fonts ──────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+
+/* ─── CSS Custom Properties — Plearn Design System ─────────────────────────── */
+:root {
+  /* Core neutrals */
+  --ink:        #1A1715;
+  --ink-2:      #2E2A26;
+  --ink-3:      #5B544D;
+  --ink-4:      #8F877E;
+  --line:       #E8E1D2;
+  --line-2:     #D5CCB8;
+  --cream:      #F6F1E7;
+  --cream-2:    #EDE5D2;
+  --paper:      #FFFCF6;
+  --white:      #FFFFFF;
+
+  /* Brand primary — Vermilion */
+  --vermilion:      #FF4D2E;
+  --vermilion-2:    #E83B1C;
+  --vermilion-soft: #FFE6DE;
+
+  /* Brand secondary — Pine */
+  --pine:      #1F3D2E;
+  --pine-2:    #2D5742;
+  --pine-soft: #DDEAE0;
+
+  /* Accent — Mustard */
+  --mustard:      #F4C430;
+  --mustard-soft: #FDF3CE;
+
+  /* Font families */
+  --font-thai:  'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif: 'IBM Plex Serif', 'IBM Plex Sans Thai', Georgia, serif;
+  --font-mono:  'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Spacing base */
+  --container-padding-x: 32px;
+  --max-width: 1440px;
+
+  /* Shadows */
+  --shadow-card:   0 1px 0 rgba(26,23,21,0.04), 0 8px 24px -8px rgba(26,23,21,0.08);
+  --shadow-lift:   0 4px 0 rgba(26,23,21,0.04), 0 12px 36px -8px rgba(26,23,21,0.16);
+  --shadow-enroll: 0 20px 60px -10px rgba(0,0,0,0.4);
+
+  /* Transitions */
+  --t-fast:  150ms;
+  --t-base:  200ms;
+  --t-slow:  250ms;
+}
+
+/* ─── Base reset ────────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-thai);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* ─── Typography utilities ──────────────────────────────────────────────────── */
+.text-display-xl { font-family: var(--font-serif); font-size: 64px; font-weight: 500; line-height: 1.02; letter-spacing: -0.025em; }
+.text-display-l  { font-family: var(--font-serif); font-size: 48px; font-weight: 500; line-height: 1.08; letter-spacing: -0.020em; }
+.text-display-m  { font-family: var(--font-serif); font-size: 42px; font-weight: 500; line-height: 1.10; letter-spacing: -0.020em; }
+.text-display-s  { font-family: var(--font-serif); font-size: 36px; font-weight: 500; line-height: 1.10; letter-spacing: -0.020em; }
+.text-h1  { font-family: var(--font-serif); font-size: 32px; font-weight: 500; line-height: 1.15; letter-spacing: -0.020em; }
+.text-h2  { font-family: var(--font-serif); font-size: 24px; font-weight: 500; line-height: 1.25; letter-spacing: -0.010em; }
+.text-h3  { font-family: var(--font-serif); font-size: 20px; font-weight: 500; line-height: 1.30; letter-spacing: -0.010em; }
+.text-h4  { font-family: var(--font-serif); font-size: 17px; font-weight: 500; line-height: 1.35; }
+.text-body-l   { font-family: var(--font-thai); font-size: 17px; line-height: 1.55; }
+.text-body     { font-family: var(--font-thai); font-size: 15px; line-height: 1.65; }
+.text-body-s   { font-family: var(--font-thai); font-size: 14px; line-height: 1.50; }
+.text-caption  { font-family: var(--font-thai); font-size: 13px; line-height: 1.45; }
+.text-caption-s { font-family: var(--font-thai); font-size: 12px; line-height: 1.40; }
+.text-label    { font-family: var(--font-mono); font-size: 11px; font-weight: 500; line-height: 1.30; letter-spacing: 0.08em; text-transform: uppercase; }
+.text-label-xs { font-family: var(--font-mono); font-size: 10px; font-weight: 500; line-height: 1.20; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ─── Container ─────────────────────────────────────────────────────────────── */
+.plearn-container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--container-padding-x);
+}
+
+/* ─── Button variants ───────────────────────────────────────────────────────── */
+.plearn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-thai);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast), transform var(--t-base);
+  white-space: nowrap;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.plearn-btn:active { transform: scale(0.98); }
+.plearn-btn:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
+
+.plearn-btn-primary {
+  background: var(--vermilion);
+  color: var(--paper);
+  border-color: var(--vermilion);
+}
+.plearn-btn-primary:hover { background: var(--vermilion-2); border-color: var(--vermilion-2); }
+
+.plearn-btn-solid {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.plearn-btn-solid:hover { background: var(--ink-2); border-color: var(--ink-2); }
+
+.plearn-btn-line {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.plearn-btn-line:hover { border-color: var(--ink); }
+
+.plearn-btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: transparent;
+}
+.plearn-btn-ghost:hover { background: var(--cream-2); }
+
+.plearn-btn-lg {
+  font-size: 15px;
+  padding: 12px 20px;
+}
+
+/* ─── Course card ───────────────────────────────────────────────────────────── */
+.plearn-course-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform var(--t-base), box-shadow var(--t-base);
+  cursor: pointer;
+}
+.plearn-course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+.plearn-course-card__thumb {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  position: relative;
+}
+
+.plearn-course-card__body {
+  padding: 16px;
+}
+
+/* ─── Thumbnail gradients by category ──────────────────────────────────────── */
+.thumb-business  { background: linear-gradient(135deg, #1F3D2E, #2D5742); }
+.thumb-finance   { background: linear-gradient(135deg, #6B2D5C, #9A4A85); }
+.thumb-tech      { background: linear-gradient(135deg, #2C5F7E, #4485A8); }
+.thumb-design    { background: linear-gradient(135deg, #FF4D2E, #FF8A3D); }
+.thumb-language  { background: linear-gradient(135deg, #F4C430, #C99A1F); }
+.thumb-lifestyle { background: linear-gradient(135deg, #1A1715, #5B544D); }
+.thumb-marketing { background: linear-gradient(135deg, #1F3D2E, #3A6E54); }
+.thumb-default   { background: linear-gradient(135deg, #2E2A26, #5B544D); }
+
+/* ─── Badge / tag styles ────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+.badge-bestseller { background: var(--mustard); color: var(--ink); }
+.badge-new        { background: var(--vermilion); color: var(--paper); }
+.badge-free       { background: var(--pine); color: var(--paper); }
+.badge-trial      { background: var(--pine-soft); color: var(--pine); }
+.badge-live       { background: var(--vermilion-soft); color: var(--vermilion-2); }
+.badge-draft      { background: var(--cream-2); color: var(--ink-3); }
+.badge-review     { background: var(--mustard-soft); color: #7a5c00; }
+.badge-archived   { background: var(--cream-2); color: var(--ink-4); }
+
+/* ─── Path card ─────────────────────────────────────────────────────────────── */
+.plearn-path-card {
+  border-radius: 16px;
+  padding: 28px;
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t-base);
+  cursor: pointer;
+}
+.plearn-path-card:hover { transform: translateY(-3px); }
+
+/* ─── Enroll card ───────────────────────────────────────────────────────────── */
+.plearn-enroll-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-enroll);
+}
+
+/* ─── Nav ───────────────────────────────────────────────────────────────────── */
+.plearn-nav {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.plearn-nav-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-3);
+  transition: background var(--t-fast), color var(--t-fast);
+  cursor: pointer;
+  text-decoration: none;
+}
+.plearn-nav-item:hover { background: var(--cream-2); color: var(--ink); }
+.plearn-nav-item.active { background: var(--vermilion-soft); color: var(--vermilion); }
+
+/* ─── Promo bar ──────────────────────────────────────────────────────────────── */
+.plearn-promo-bar {
+  background: var(--pine);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px var(--container-padding-x);
+  text-align: center;
+}
+
+/* ─── Input ──────────────────────────────────────────────────────────────────── */
+.plearn-input {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-thai);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  width: 100%;
+}
+.plearn-input::placeholder { color: var(--ink-4); }
+.plearn-input:focus {
+  border-color: var(--ink-3);
+  box-shadow: 0 0 0 3px rgba(26,23,21,0.06);
+}
+
+.plearn-input-search {
+  border-radius: 999px;
+  padding-left: 40px;
+}
+
+/* ─── Progress bar ───────────────────────────────────────────────────────────── */
+.plearn-progress {
+  height: 4px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.plearn-progress__bar {
+  height: 100%;
+  background: var(--vermilion);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* ─── Skeleton shimmer ───────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--cream-2) 25%, var(--cream) 50%, var(--cream-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 4px;
+}
+
+/* ─── Video player theme ─────────────────────────────────────────────────────── */
+.player-bg   { background: #0d0c0a; }
+.player-bar  { background: #14120f; }
+
+/* ─── Streak / XP ────────────────────────────────────────────────────────────── */
+.streak-day--done   { background: var(--vermilion); }
+.streak-day--empty  { background: var(--cream-2); }
+.streak-day         { width: 28px; height: 28px; border-radius: 4px; }
+
+/* ─── Scrollbar (Webkit) ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+/* ─── Focus visible ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--vermilion);
+  outline-offset: 2px;
+}

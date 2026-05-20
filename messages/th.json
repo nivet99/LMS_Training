@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "courses": "คอร์สทั้งหมด",
+    "instructors": "ผู้สอน",
+    "pricing": "แผนราคา",
+    "login": "เข้าสู่ระบบ",
+    "signup": "เริ่มเรียน"
+  },
+  "home": {
+    "hero_title": "เรียนเพลิน เก่งจริงในงานที่ทำ",
+    "hero_subtitle": "คอร์สออนไลน์คุณภาพสูงจากผู้เชี่ยวชาญที่ทำงานจริง",
+    "cta_start": "เริ่มเรียนฟรี",
+    "cta_pricing": "ดูแผนราคา"
+  },
+  "course": {
+    "enroll": "ลงทะเบียนเรียน",
+    "free_enroll": "เรียนฟรีทันที",
+    "try_free": "ทดลองเรียนฟรี",
+    "bestseller": "Bestseller",
+    "new": "ใหม่",
+    "free": "ฟรี",
+    "lessons": "บทเรียน",
+    "duration": "ระยะเวลา",
+    "level": "ระดับ",
+    "students": "ผู้เรียน"
+  },
+  "dashboard": {
+    "welcome_back": "ยินดีต้อนรับกลับ",
+    "continue_learning": "เรียนต่อ",
+    "recommended": "แนะนำสำหรับคุณ",
+    "streak": "วันติดต่อกัน",
+    "xp": "XP สะสม",
+    "certificates": "ใบรับรอง"
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "signup": "สมัครสมาชิก",
+    "forgot_password": "ลืมรหัสผ่าน",
+    "email": "Email",
+    "password": "รหัสผ่าน",
+    "name": "ชื่อ-นามสกุล",
+    "or_email": "หรือใช้ Email"
+  }
+}
