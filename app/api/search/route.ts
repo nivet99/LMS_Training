@@ -1,29 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchClient, COURSES_INDEX } from "@/lib/meilisearch";
+import { MOCK_COURSES } from "@/mock";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const q        = searchParams.get("q") ?? "";
+  const q        = (searchParams.get("q") ?? "").toLowerCase().trim();
   const category = searchParams.get("category");
   const level    = searchParams.get("level");
-  const page     = parseInt(searchParams.get("page") ?? "1", 10);
-  const limit    = parseInt(searchParams.get("limit") ?? "20", 10);
+  const page     = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const limit    = Math.min(50, parseInt(searchParams.get("limit") ?? "20", 10));
 
-  const filter: string[] = ["status = PUBLISHED"];
-  if (category) filter.push(`categorySlug = ${category}`);
-  if (level)    filter.push(`level = ${level}`);
+  let results = MOCK_COURSES.filter((c) => c.status === "PUBLISHED");
 
-  try {
-    const index   = searchClient.index(COURSES_INDEX);
-    const results = await index.search(q, {
-      filter: filter.join(" AND "),
-      limit,
-      offset: (page - 1) * limit,
-      attributesToRetrieve: ["id", "title", "slug", "thumbnail", "price", "level", "language", "averageRating", "enrollmentCount", "instructorName"],
-    });
-    return NextResponse.json(results);
-  } catch (err) {
-    console.error("[search]", err);
-    return NextResponse.json({ hits: [], estimatedTotalHits: 0 });
+  if (q) {
+    results = results.filter((c) =>
+      c.title.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      (c.instructor.name ?? "").toLowerCase().includes(q) ||
+      (c.category?.name ?? "").toLowerCase().includes(q)
+    );
   }
+  if (category) results = results.filter((c) => c.category?.slug === category);
+  if (level)    results = results.filter((c) => c.level === level);
+
+  const total  = results.length;
+  const offset = (page - 1) * limit;
+  const hits   = results.slice(offset, offset + limit).map((c) => ({
+    id:              c.id,
+    title:           c.title,
+    slug:            c.slug,
+    thumbnail:       c.thumbnail,
+    price:           c.price,
+    level:           c.level,
+    language:        c.language,
+    averageRating:   c.averageRating,
+    enrollmentCount: c.enrollmentCount,
+    instructorName:  c.instructor.name,
+  }));
+
+  return NextResponse.json({ hits, estimatedTotalHits: total, page, limit });
 }

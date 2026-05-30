@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { getSession } from "@/lib/session";
+import { signOutUser } from "@/actions/auth/signout";
+import { redirect } from "next/navigation";
 
 const LEARNER_NAV = [
   { href: "/dashboard",       label: "แดชบอร์ด" },
@@ -10,6 +13,11 @@ const LEARNER_NAV = [
 ];
 
 export default function LearnerLayout({ children }: { children: React.ReactNode }) {
+  const session = getSession();
+  if (!session) redirect("/login");
+
+  const initial = session.name.charAt(0).toUpperCase();
+
   return (
     <div className="min-h-screen" style={{ background: "var(--cream)" }}>
       {/* Top nav */}
@@ -24,6 +32,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             </div>
             <span className="font-serif font-medium text-lg" style={{ color: "var(--ink)" }}>Plearn</span>
           </Link>
+
           <nav className="hidden md:flex items-center gap-1 flex-1">
             {LEARNER_NAV.map((l) => (
               <Link key={l.href} href={l.href} className="plearn-nav-item text-sm">
@@ -31,13 +40,21 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
               </Link>
             ))}
           </nav>
-          <div className="ml-auto">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium cursor-pointer"
-              style={{ background: "var(--vermilion)", color: "var(--paper)" }}
-            >
-              P
-            </div>
+
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-caption hidden md:block" style={{ color: "var(--ink-3)" }}>
+              {session.name}
+            </span>
+            <form action={signOutUser} className="flex items-center">
+              <button
+                type="submit"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                style={{ background: "var(--vermilion)", color: "var(--paper)" }}
+                title="ออกจากระบบ"
+              >
+                {initial}
+              </button>
+            </form>
           </div>
         </div>
       </header>

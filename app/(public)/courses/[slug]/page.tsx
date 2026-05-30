@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { MOCK_COURSES } from "@/mock";
+import { MOCK_COURSES, MOCK_CHAPTERS } from "@/mock";
 import { formatCurrency, formatDuration, formatNumber } from "@/lib/utils";
 import { CourseStatusBadge } from "@/components/course/CourseStatusBadge";
+import { getSession } from "@/lib/session";
+import { getEnrolledIds, getCourseProgress } from "@/lib/enrollment";
+import { enrollCourse } from "@/actions/courses/enroll";
 
-export const revalidate = 1800;
+export const revalidate = 0; // always fresh (enrollment state depends on cookies)
 
 export async function generateStaticParams() {
   return MOCK_COURSES.map((c) => ({ slug: c.slug }));
@@ -14,21 +18,47 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const course = MOCK_COURSES.find((c) => c.slug === params.slug);
   if (!course) return { title: "ไม่พบคอร์ส" };
-  return {
-    title: course.title,
-    description: course.description.slice(0, 160),
-  };
+  return { title: course.title, description: course.description.slice(0, 160) };
 }
+
+const LEVEL_LABEL: Record<string, string> = {
+  BEGINNER: "เริ่มต้น", INTERMEDIATE: "กลาง", ADVANCED: "ขั้นสูง", ALL_LEVELS: "ทุกระดับ",
+};
+
+const THUMB_MAP: Record<string, string> = {
+  design: "thumb-design", marketing: "thumb-marketing", tech: "thumb-tech",
+  finance: "thumb-finance", language: "thumb-language", business: "thumb-business",
+  lifestyle: "thumb-lifestyle",
+};
 
 export default function CourseDetailPage({ params }: { params: { slug: string } }) {
   const course = MOCK_COURSES.find((c) => c.slug === params.slug);
   if (!course) notFound();
 
-  const isFree = !course.price || course.price === 0;
+  const isFree     = !course.price || Number(course.price) === 0;
+  const thumbClass = THUMB_MAP[course.category?.slug ?? ""] ?? "thumb-default";
+
+  // Auth + enrollment state
+  const session     = getSession();
+  const enrolledIds = session ? getEnrolledIds(session.id) : [];
+  const isEnrolled  = enrolledIds.includes(course.id);
+
+  // Find first lesson for "Continue" link
+  const chapters    = MOCK_CHAPTERS[course.id] ?? [];
+  const firstLesson = chapters[0]?.lessons[0];
+  const continueUrl = isEnrolled && firstLesson
+    ? `/my-courses/${course.id}/learn/${firstLesson.id}`
+    : null;
+
+  // Progress if enrolled
+  const prog = isEnrolled ? getCourseProgress(course.id) : null;
+
+  // Bind enrollCourse to this course's ID
+  const enrollAction = enrollCourse.bind(null, course.id);
 
   return (
     <div>
-      {/* Hero — dark ink bg */}
+      {/* ── Hero ── */}
       <div style={{ background: "var(--ink)" }} className="py-14">
         <div className="plearn-container">
           <div className="grid lg:grid-cols-[1fr_460px] gap-14 items-start">
@@ -48,7 +78,7 @@ export default function CourseDetailPage({ params }: { params: { slug: string } 
                 {course.description}
               </p>
 
-              {/* Meta row */}
+              {/* Meta */}
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 {course.averageRating && (
                   <div className="flex items-center gap-1.5">
@@ -69,14 +99,15 @@ export default function CourseDetailPage({ params }: { params: { slug: string } 
                     </span>
                   </div>
                 )}
-                <span className="badge badge-draft" style={{ background: "rgba(255,252,246,0.1)", color: "rgba(255,252,246,0.65)" }}>
-                  {course.level === "BEGINNER" ? "เริ่มต้น" : course.level === "INTERMEDIATE" ? "กลาง" : course.level === "ADVANCED" ? "ขั้นสูง" : "ทุกระดับ"}
+                <span className="badge" style={{ background: "rgba(255,252,246,0.1)", color: "rgba(255,252,246,0.65)" }}>
+                  {LEVEL_LABEL[course.level] ?? course.level}
                 </span>
                 {course.totalDuration && (
                   <span className="text-caption" style={{ color: "rgba(255,252,246,0.5)" }}>
                     {formatDuration(course.totalDuration)}
                   </span>
                 )}
+                <CourseStatusBadge status={course.status} />
               </div>
 
               {/* Instructor */}
@@ -94,30 +125,63 @@ export default function CourseDetailPage({ params }: { params: { slug: string } 
               </div>
             </div>
 
-            {/* Enroll card */}
-            <div className="plearn-enroll-card rounded-xl overflow-hidden" style={{ background: "var(--paper)" }}>
-              {/* Thumbnail placeholder */}
-              <div className={`w-full aspect-video ${
-                { design: "thumb-design", marketing: "thumb-marketing", tech: "thumb-tech",
-                  finance: "thumb-finance", language: "thumb-language", business: "thumb-business",
-                  lifestyle: "thumb-lifestyle" }[course.category?.slug ?? ""] ?? "thumb-default"
-              }`} />
+            {/* ── Enroll card ── */}
+            <div className="plearn-enroll-card rounded-xl overflow-hidden sticky top-20" style={{ background: "var(--paper)" }}>
+              <div className={`w-full aspect-video ${thumbClass}`} />
               <div className="p-6">
+                {/* Price */}
                 <p className="font-serif font-medium mb-1" style={{ fontSize: "32px", color: "var(--ink)" }}>
                   {isFree ? "ฟรี" : formatCurrency(course.price!, course.currency)}
                 </p>
+
+                {/* CTA buttons */}
                 <div className="space-y-2.5 mt-5">
-                  <Link href="/signup" className="plearn-btn plearn-btn-primary plearn-btn-lg w-full justify-center">
-                    {isFree ? "เรียนฟรีทันที" : "ลงทะเบียนเรียน"}
-                  </Link>
-                  <button className="plearn-btn plearn-btn-line plearn-btn-lg w-full justify-center">
-                    ทดลองเรียนฟรี
-                  </button>
+                  {!session ? (
+                    // Not logged in → prompt to login
+                    <Link
+                      href={`/login?callbackUrl=/courses/${course.slug}`}
+                      className="plearn-btn plearn-btn-primary plearn-btn-lg w-full justify-center"
+                    >
+                      เข้าสู่ระบบเพื่อเรียน
+                    </Link>
+                  ) : isEnrolled ? (
+                    // Already enrolled → go to lesson
+                    <div>
+                      {prog && (
+                        <div className="mb-3">
+                          <div className="plearn-progress mb-1">
+                            <div className="plearn-progress__bar" style={{ width: `${prog.progress}%` }} />
+                          </div>
+                          <p className="text-caption" style={{ color: "var(--ink-3)" }}>
+                            {prog.completedIds.size}/{prog.totalLessons} บทเรียน · {prog.progress}% สำเร็จ
+                          </p>
+                        </div>
+                      )}
+                      <Link
+                        href={continueUrl ?? `/my-courses/${course.id}`}
+                        className="plearn-btn plearn-btn-primary plearn-btn-lg w-full justify-center"
+                      >
+                        {prog?.progress === 0 ? "เริ่มเรียน" : prog?.progress === 100 ? "ทบทวนคอร์ส" : "เรียนต่อ"}
+                      </Link>
+                    </div>
+                  ) : (
+                    // Not enrolled → enroll form
+                    <form action={enrollAction}>
+                      <button
+                        type="submit"
+                        className="plearn-btn plearn-btn-primary plearn-btn-lg w-full justify-center"
+                      >
+                        {isFree ? "เรียนฟรีทันที" : "ลงทะเบียนเรียน"}
+                      </button>
+                    </form>
+                  )}
                 </div>
+
+                {/* Features list */}
                 <ul className="mt-5 space-y-2">
                   {[
                     `${course.lessonCount ?? 0} บทเรียน`,
-                    `${formatDuration(course.totalDuration ?? 0)}`,
+                    formatDuration(course.totalDuration ?? 0),
                     "เรียนได้ตลอดชีพ",
                     "ใบรับรองเมื่อเรียนจบ",
                     "เข้าถึงได้บน Mobile",
@@ -136,15 +200,79 @@ export default function CourseDetailPage({ params }: { params: { slug: string } 
         </div>
       </div>
 
-      {/* Body tabs placeholder */}
-      <div className="plearn-container py-12">
-        <div
-          className="rounded-xl p-8 border"
-          style={{ background: "var(--paper)", borderColor: "var(--line)" }}
-        >
+      {/* ── Body ── */}
+      <div className="plearn-container py-12 space-y-10">
+
+        {/* About */}
+        <div className="rounded-xl p-8 border" style={{ background: "var(--paper)", borderColor: "var(--line)" }}>
           <h2 className="text-h2 mb-4" style={{ color: "var(--ink)" }}>เกี่ยวกับคอร์สนี้</h2>
           <p className="text-body" style={{ color: "var(--ink-3)" }}>{course.description}</p>
         </div>
+
+        {/* Syllabus */}
+        {chapters.length > 0 && (
+          <div>
+            <h2 className="text-h2 mb-5" style={{ color: "var(--ink)" }}>เนื้อหาคอร์ส</h2>
+            <p className="text-caption mb-4" style={{ color: "var(--ink-3)" }}>
+              {chapters.length} บท · {chapters.flatMap((ch) => ch.lessons).length} บทเรียน · {formatDuration(course.totalDuration ?? 0)}
+            </p>
+            <div className="space-y-3">
+              {chapters.map((chapter) => (
+                <details key={chapter.id} className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--line)" }} open>
+                  <summary
+                    className="px-5 py-4 flex items-center justify-between cursor-pointer select-none"
+                    style={{ background: "var(--cream-2)" }}
+                  >
+                    <div>
+                      <p className="text-body-s font-medium" style={{ color: "var(--ink)" }}>{chapter.title}</p>
+                      <p className="text-caption" style={{ color: "var(--ink-3)" }}>
+                        {chapter.lessons.length} บทเรียน · {formatDuration(chapter.lessons.reduce((s, l) => s + (l.duration ?? 0), 0))}
+                      </p>
+                    </div>
+                    <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="var(--ink-3)" strokeWidth="1.5">
+                      <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </summary>
+                  <div className="divide-y bg-white" style={{ borderColor: "var(--line)" }}>
+                    {chapter.lessons.map((lesson) => (
+                      <div key={lesson.id} className="flex items-center gap-4 px-5 py-3.5">
+                        {/* Type icon */}
+                        <span style={{ color: "var(--ink-4)" }}>
+                          {lesson.type === "VIDEO" ? (
+                            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <polygon points="4,2 14,8 4,14" fill="currentColor" strokeLinejoin="round"/>
+                            </svg>
+                          ) : lesson.type === "QUIZ" ? (
+                            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <circle cx="8" cy="8" r="6"/><path d="M8 5v.5m0 2v2.5" strokeLinecap="round"/>
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M3 4h10M3 7h8M3 10h6" strokeLinecap="round"/>
+                            </svg>
+                          )}
+                        </span>
+
+                        <span className="flex-1 text-body-s" style={{ color: "var(--ink)" }}>
+                          {lesson.title}
+                          {lesson.isFree && (
+                            <span className="ml-2 text-xs font-medium" style={{ color: "var(--pine)" }}>ดูฟรี</span>
+                          )}
+                        </span>
+
+                        {lesson.duration && (
+                          <span className="text-caption shrink-0" style={{ color: "var(--ink-4)" }}>
+                            {formatDuration(lesson.duration)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

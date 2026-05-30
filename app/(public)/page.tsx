@@ -219,8 +219,8 @@ export default function HomePage() {
             className="font-serif font-medium mx-auto max-w-2xl"
             style={{ fontSize: "28px", color: "var(--paper)", lineHeight: 1.4 }}
           >
-            "คุณอยู่ห่างจากใบรับรองใบถัดไป
-            เพียง <em style={{ color: "var(--vermilion)" }}>3 บทเรียน</em>"
+            &ldquo;คุณอยู่ห่างจากใบรับรองใบถัดไป
+            เพียง <em style={{ color: "var(--vermilion)" }}>3 บทเรียน</em>&rdquo;
           </p>
           <div className="mt-8">
             <Link href="/signup" className="plearn-btn plearn-btn-primary plearn-btn-lg">

@@ -1,8 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { MOCK_COURSES, MOCK_CHAPTERS, MOCK_PROGRESS } from "@/mock";
+import React from "react";
+import { MOCK_COURSES, MOCK_CHAPTERS } from "@/mock";
 import { formatDuration } from "@/lib/utils";
+import { getSession } from "@/lib/session";
+import { isEnrolledIn, getCourseProgress } from "@/lib/enrollment";
 
 export async function generateMetadata({ params }: { params: { courseId: string } }): Promise<Metadata> {
   const course = MOCK_COURSES.find((c) => c.id === params.courseId);
@@ -19,44 +22,27 @@ const LESSON_TYPE_LABEL: Record<string, string> = {
   VIDEO: "วิดีโอ", TEXT: "บทความ", QUIZ: "แบบทดสอบ",
 };
 
-const LESSON_TYPE_ICON: Record<string, React.ReactNode> = {
-  VIDEO: (
-    <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <polygon points="5,3 13,8 5,13" fill="currentColor" strokeLinejoin="round"/>
-    </svg>
-  ),
-  TEXT: (
-    <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M3 4h10M3 7h8M3 10h6" strokeLinecap="round"/>
-    </svg>
-  ),
-  QUIZ: (
-    <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="8" cy="8" r="6"/><path d="M8 5.5v.5m0 2v2.5" strokeLinecap="round"/>
-    </svg>
-  ),
-};
-
-import React from "react";
-
 export default function CourseOutlinePage({ params }: { params: { courseId: string } }) {
   const course = MOCK_COURSES.find((c) => c.id === params.courseId);
   if (!course) notFound();
 
-  const chapters = MOCK_CHAPTERS[params.courseId] ?? [];
-  const allLessons = chapters.flatMap((ch) => ch.lessons);
-  const completedCount = allLessons.filter((l) => MOCK_PROGRESS[l.id]?.completedAt).length;
-  const progress = allLessons.length > 0 ? Math.round((completedCount / allLessons.length) * 100) : 0;
-  const thumbClass = THUMB_MAP[course.category?.slug ?? ""] ?? "thumb-default";
+  // Auth + enrollment gate
+  const session = getSession();
+  if (!session) redirect(`/login?callbackUrl=/my-courses/${params.courseId}`);
+  if (!isEnrolledIn(session.id, params.courseId)) redirect(`/courses/${course.slug}`);
 
-  // Find next lesson to continue (first incomplete)
-  const nextLesson = allLessons.find((l) => !MOCK_PROGRESS[l.id]?.completedAt) ?? allLessons[0];
+  const chapters  = MOCK_CHAPTERS[params.courseId] ?? [];
+  const { completedIds, progress, totalLessons, nextLessonId } = getCourseProgress(params.courseId);
+
+  const thumbClass = THUMB_MAP[course.category?.slug ?? ""] ?? "thumb-default";
 
   return (
     <div className="plearn-container py-8">
       {/* Course hero */}
-      <div className="rounded-xl overflow-hidden border mb-8 flex gap-0"
-        style={{ background: "var(--paper)", borderColor: "var(--line)" }}>
+      <div
+        className="rounded-xl overflow-hidden border mb-8 flex gap-0"
+        style={{ background: "var(--paper)", borderColor: "var(--line)" }}
+      >
         <div className={`w-48 shrink-0 ${thumbClass}`} />
         <div className="flex-1 p-6">
           <p className="text-caption mb-1" style={{ color: "var(--ink-3)" }}>
@@ -64,20 +50,20 @@ export default function CourseOutlinePage({ params }: { params: { courseId: stri
           </p>
           <h1 className="text-h2 mb-2" style={{ color: "var(--ink)" }}>{course.title}</h1>
           <p className="text-body-s mb-4" style={{ color: "var(--ink-3)" }}>
-            {course.instructor.name} · {allLessons.length} บทเรียน · {formatDuration(course.totalDuration ?? 0)}
+            {course.instructor.name} · {totalLessons} บทเรียน · {formatDuration(course.totalDuration ?? 0)}
           </p>
           {/* Progress */}
-          <div className="mb-1">
-            <div className="plearn-progress">
-              <div className="plearn-progress__bar" style={{ width: `${progress}%` }} />
-            </div>
+          <div className="plearn-progress mb-1">
+            <div className="plearn-progress__bar" style={{ width: `${progress}%` }} />
           </div>
           <p className="text-caption-s mb-4" style={{ color: "var(--ink-4)" }}>
-            {completedCount} / {allLessons.length} บทเรียน · {progress}% สำเร็จ
+            {completedIds.size} / {totalLessons} บทเรียน · {progress}% สำเร็จ
           </p>
-          {nextLesson && (
-            <Link href={`/my-courses/${course.id}/learn/${nextLesson.id}`}
-              className="plearn-btn plearn-btn-primary">
+          {nextLessonId && (
+            <Link
+              href={`/my-courses/${course.id}/learn/${nextLessonId}`}
+              className="plearn-btn plearn-btn-primary"
+            >
               {progress === 0 ? "เริ่มเรียน" : progress === 100 ? "ทบทวนคอร์ส" : "เรียนต่อ"}
             </Link>
           )}
@@ -92,17 +78,20 @@ export default function CourseOutlinePage({ params }: { params: { courseId: stri
       ) : (
         <div className="space-y-3">
           {chapters.map((chapter) => {
-            const chCompleted = chapter.lessons.filter((l) => MOCK_PROGRESS[l.id]?.completedAt).length;
+            const chCompleted = chapter.lessons.filter((l) => completedIds.has(l.id)).length;
             return (
-              <div key={chapter.id} className="rounded-xl border overflow-hidden"
-                style={{ background: "var(--paper)", borderColor: "var(--line)" }}>
+              <div
+                key={chapter.id}
+                className="rounded-xl border overflow-hidden"
+                style={{ background: "var(--paper)", borderColor: "var(--line)" }}
+              >
                 {/* Chapter header */}
-                <div className="px-5 py-4 flex items-center justify-between"
-                  style={{ background: "var(--cream-2)" }}>
+                <div
+                  className="px-5 py-4 flex items-center justify-between"
+                  style={{ background: "var(--cream-2)" }}
+                >
                   <div>
-                    <p className="text-body-s font-medium" style={{ color: "var(--ink)" }}>
-                      {chapter.title}
-                    </p>
+                    <p className="text-body-s font-medium" style={{ color: "var(--ink)" }}>{chapter.title}</p>
                     <p className="text-caption" style={{ color: "var(--ink-3)" }}>
                       {chCompleted}/{chapter.lessons.length} บทเรียน
                     </p>
@@ -117,35 +106,50 @@ export default function CourseOutlinePage({ params }: { params: { courseId: stri
                 {/* Lessons */}
                 <div className="divide-y" style={{ borderColor: "var(--line)" }}>
                   {chapter.lessons.map((lesson) => {
-                    const done = !!MOCK_PROGRESS[lesson.id]?.completedAt;
-                    const inProgress = !done && !!MOCK_PROGRESS[lesson.id]?.watchPosition;
+                    const done = completedIds.has(lesson.id);
                     return (
-                      <Link key={lesson.id}
+                      <Link
+                        key={lesson.id}
                         href={`/my-courses/${course.id}/learn/${lesson.id}`}
-                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-[var(--cream-2)] transition-colors group">
-                        {/* Status icon */}
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border"
+                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-[var(--cream-2)] transition-colors group"
+                      >
+                        {/* Completion circle */}
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border"
                           style={{
-                            background: done ? "var(--pine)" : inProgress ? "var(--mustard-soft, #FFF8E1)" : "transparent",
-                            borderColor: done ? "var(--pine)" : inProgress ? "var(--mustard)" : "var(--line)",
-                          }}>
-                          {done ? (
+                            background: done ? "var(--pine)" : "transparent",
+                            borderColor: done ? "var(--pine)" : "var(--line)",
+                          }}
+                        >
+                          {done && (
                             <svg viewBox="0 0 12 12" className="w-3 h-3" fill="white">
                               <path d="M2 6l2.5 2.5L10 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                             </svg>
-                          ) : inProgress ? (
-                            <div className="w-2 h-2 rounded-full" style={{ background: "var(--mustard)" }} />
-                          ) : null}
+                          )}
                         </div>
 
                         {/* Type icon */}
-                        <span style={{ color: done ? "var(--pine)" : "var(--ink-3)" }}>
-                          {LESSON_TYPE_ICON[lesson.type]}
+                        <span style={{ color: done ? "var(--pine)" : "var(--ink-4)" }}>
+                          {lesson.type === "VIDEO" ? (
+                            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <polygon points="4,2 14,8 4,14" fill="currentColor" strokeLinejoin="round"/>
+                            </svg>
+                          ) : lesson.type === "QUIZ" ? (
+                            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <circle cx="8" cy="8" r="6"/><path d="M8 5v.5m0 2v2.5" strokeLinecap="round"/>
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M3 4h10M3 7h8M3 10h6" strokeLinecap="round"/>
+                            </svg>
+                          )}
                         </span>
 
                         {/* Title */}
-                        <span className="flex-1 text-body-s group-hover:text-[var(--vermilion)] transition-colors"
-                          style={{ color: done ? "var(--ink-3)" : "var(--ink)" }}>
+                        <span
+                          className="flex-1 text-body-s group-hover:text-[var(--vermilion)] transition-colors"
+                          style={{ color: done ? "var(--ink-3)" : "var(--ink)" }}
+                        >
                           {lesson.title}
                           {lesson.isFree && (
                             <span className="ml-2 text-xs font-medium" style={{ color: "var(--pine)" }}>ฟรี</span>
@@ -173,7 +177,6 @@ export default function CourseOutlinePage({ params }: { params: { courseId: stri
         </div>
       )}
 
-      {/* Back link */}
       <div className="mt-8">
         <Link href="/my-courses" className="text-body-s" style={{ color: "var(--ink-3)" }}>
           ← กลับไปคอร์สของฉัน

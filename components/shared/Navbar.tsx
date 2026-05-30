@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { signOutUser } from "@/actions/auth/signout";
+import type { MockSession } from "@/lib/session";
 
 const NAV_LINKS = [
   { href: "/courses",     label: "คอร์สทั้งหมด" },
@@ -10,8 +12,13 @@ const NAV_LINKS = [
   { href: "/pricing",     label: "แผนราคา" },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  session: MockSession | null;
+}
+
+export function Navbar({ session }: NavbarProps) {
   const pathname = usePathname();
+  const initial = session?.name?.charAt(0).toUpperCase() ?? "P";
 
   return (
     <header className="plearn-nav">
@@ -59,15 +66,33 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
-          <Link href="/login" className="plearn-btn plearn-btn-ghost text-sm">
-            เข้าสู่ระบบ
-          </Link>
-          <Link
-            href="/signup"
-            className="plearn-btn plearn-btn-primary text-sm"
-          >
-            เริ่มเรียน
-          </Link>
+          {session ? (
+            <>
+              <Link href="/dashboard" className="plearn-btn plearn-btn-ghost text-sm">
+                แดชบอร์ด
+              </Link>
+              <form action={signOutUser}>
+                <button type="submit" className="flex items-center gap-2">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                    style={{ background: "var(--vermilion)", color: "var(--paper)" }}
+                    title={`${session.name} — ออกจากระบบ`}
+                  >
+                    {initial}
+                  </div>
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="plearn-btn plearn-btn-ghost text-sm">
+                เข้าสู่ระบบ
+              </Link>
+              <Link href="/signup" className="plearn-btn plearn-btn-primary text-sm">
+                เริ่มเรียน
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

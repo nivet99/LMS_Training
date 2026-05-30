@@ -1,10 +1,10 @@
-import { Navbar } from "@/components/shared/Navbar";
+import { NavbarWrapper } from "@/components/shared/NavbarWrapper";
 import { Footer } from "@/components/shared/Footer";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Navbar />
+      <NavbarWrapper />
       <main>{children}</main>
       <Footer />
     </>

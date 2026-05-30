@@ -71,8 +71,8 @@ function searchCourses(rawInput: string): Course[] {
     const haystack = [
       c.title,
       c.description,
-      c.category.name,
-      c.category.slug,
+      c.category?.name ?? "",
+      c.category?.slug ?? "",
       c.instructor.name,
     ]
       .join(" ")
@@ -156,12 +156,12 @@ export function getBotReply(input: string): ChatMessage {
 
   // 8. Price info
   if (has(text, KW_PRICE)) {
-    const sorted = [...MOCK_COURSES].sort((a, b) => a.price - b.price);
-    const freeCount = MOCK_COURSES.filter((c) => c.price === 0).length;
+    const sorted = [...MOCK_COURSES].sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+    const freeCount = MOCK_COURSES.filter((c) => !c.price || c.price === 0).length;
     return {
       id,
       role: "bot",
-      text: `ราคาคอร์สบน Plearn:\n\n• เริ่มต้น: ${formatPrice(sorted[0].price)}\n• สูงสุด: ${formatPrice(sorted[sorted.length - 1].price)}\n• คอร์สฟรี: ${freeCount} คอร์ส\n\nพิมพ์ชื่อคอร์สที่สนใจเพื่อดูราคาได้เลยครับ`,
+      text: `ราคาคอร์สบน Plearn:\n\n• เริ่มต้น: ${formatPrice(sorted[0].price ?? 0)}\n• สูงสุด: ${formatPrice(sorted[sorted.length - 1].price ?? 0)}\n• คอร์สฟรี: ${freeCount} คอร์ส\n\nพิมพ์ชื่อคอร์สที่สนใจเพื่อดูราคาได้เลยครับ`,
     };
   }
 

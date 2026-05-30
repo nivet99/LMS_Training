@@ -1,36 +1,60 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { MockQuiz } from "@/mock";
+import { submitQuizAttempt } from "@/actions/quizzes/attempt";
 
 interface QuizEngineProps {
   quiz: MockQuiz;
   lessonTitle: string;
   onComplete: (passed: boolean, score: number) => void;
+  userId?: string;
 }
 
 type Phase = "intro" | "playing" | "result";
 
-export function QuizEngine({ quiz, lessonTitle, onComplete }: QuizEngineProps) {
+type StoredAttempt = { quizId: string; score: number; passed: boolean; timeTaken: number };
+
+function readPastAttempts(userId: string, quizId: string): StoredAttempt[] {
+  if (typeof document === "undefined") return [];
+  const raw = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(`quiz_attempts_${userId}=`))
+    ?.split("=")
+    .slice(1)
+    .join("=");
+  if (!raw) return [];
+  try {
+    const all: StoredAttempt[] = JSON.parse(decodeURIComponent(raw));
+    return all.filter((a) => a.quizId === quizId).slice(-5).reverse();
+  } catch {
+    return [];
+  }
+}
+
+export function QuizEngine({ quiz, lessonTitle, onComplete, userId }: QuizEngineProps) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
   const [timeLeft, setTimeLeft] = useState(quiz.timeLimitSecs ?? 0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [pastAttempts, setPastAttempts] = useState<StoredAttempt[]>([]);
+  const startedAtRef = useRef<number>(Date.now());
 
   const totalQ = quiz.questions.length;
   const currentQ = quiz.questions[currentIdx];
 
-  // Timer countdown
+  // Timer countdown — intentionally omits handleFinish/answers/quiz.timeLimitSecs to avoid re-creating interval on every answer
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (phase !== "playing" || !quiz.timeLimitSecs) return;
     if (timeLeft <= 0) { handleFinish(answers); return; }
     const t = setInterval(() => setTimeLeft((s) => s - 1), 1000);
     return () => clearInterval(t);
-  }, [phase, timeLeft]);
+  }, [phase, timeLeft]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleFinish = useCallback((finalAnswers: number[]) => {
+  const handleFinish = useCallback(async (finalAnswers: number[]) => {
     let earned = 0;
     let total = 0;
     quiz.questions.forEach((q, i) => {
@@ -39,9 +63,16 @@ export function QuizEngine({ quiz, lessonTitle, onComplete }: QuizEngineProps) {
     });
     const scorePercent = total > 0 ? Math.round((earned / total) * 100) : 0;
     const passed = scorePercent >= quiz.passingScore;
+    const timeTaken = Math.round((Date.now() - startedAtRef.current) / 1000);
+
+    await submitQuizAttempt({ quizId: quiz.id, score: scorePercent, passed, timeTaken });
     onComplete(passed, scorePercent);
     setPhase("result");
-  }, [quiz, onComplete]);
+    // Load history after cookie is written
+    if (userId) {
+      setTimeout(() => setPastAttempts(readPastAttempts(userId, quiz.id)), 200);
+    }
+  }, [quiz, onComplete, userId]);
 
   function handleSelect(idx: number) {
     if (showAnswer) return;
@@ -173,6 +204,42 @@ export function QuizEngine({ quiz, lessonTitle, onComplete }: QuizEngineProps) {
             );
           })}
         </div>
+
+        {/* Past attempt history */}
+        {pastAttempts.length > 0 && (
+          <div className="w-full max-w-md mb-8">
+            <p className="text-caption font-medium mb-3 text-left" style={{ color: "var(--ink-3)" }}>
+              ประวัติการทำแบบทดสอบ (ล่าสุด {pastAttempts.length} ครั้ง)
+            </p>
+            <div className="space-y-2">
+              {pastAttempts.map((a, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg px-4 py-2.5 border"
+                  style={{ background: "var(--paper)", borderColor: "var(--line)" }}>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: a.passed ? "var(--pine-soft, #E8F5E9)" : "var(--vermilion-soft)" }}>
+                      <span style={{ fontSize: "10px", color: a.passed ? "var(--pine)" : "var(--vermilion)" }}>
+                        {a.passed ? "✓" : "✗"}
+                      </span>
+                    </span>
+                    <span className="text-body-s" style={{ color: "var(--ink-3)" }}>
+                      {i === 0 ? "ครั้งนี้" : `ครั้งที่ ${pastAttempts.length - i}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono text-sm font-medium"
+                      style={{ color: a.passed ? "var(--pine)" : "var(--vermilion)" }}>
+                      {a.score}%
+                    </span>
+                    <span className="text-caption" style={{ color: "var(--ink-4)" }}>
+                      {Math.floor(a.timeTaken / 60)}:{(a.timeTaken % 60).toString().padStart(2, "0")} น.
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3">
           {!passed && (

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { QuizEngine } from "@/components/quiz/QuizEngine";
 import type { MockChapter, MockLesson } from "@/mock";
 import { formatDuration } from "@/lib/utils";
+import { markLessonComplete } from "@/actions/lessons/progress";
+import { YouTubePlayer } from "@/components/player/YouTubePlayer";
 
 interface LessonPlayerProps {
   courseId: string;
@@ -13,6 +15,7 @@ interface LessonPlayerProps {
   currentLesson: MockLesson;
   chapters: MockChapter[];
   completedLessonIds: string[];
+  userId: string;
 }
 
 const THUMB_GRADIENTS: Record<string, string> = {
@@ -31,6 +34,7 @@ export function LessonPlayer({
   currentLesson,
   chapters,
   completedLessonIds,
+  userId,
 }: LessonPlayerProps) {
   const router = useRouter();
   const [completed, setCompleted] = useState(
@@ -48,10 +52,10 @@ export function LessonPlayer({
     router.push(`/my-courses/${courseId}/learn/${lessonId}`);
   }
 
-  const handleMarkComplete = useCallback(() => {
+  const handleMarkComplete = useCallback(async () => {
     setCompleted(true);
-    // In real app: call saveWatchPosition + markLessonComplete Server Actions
-  }, []);
+    await markLessonComplete(currentLesson.id, courseId);
+  }, [currentLesson.id, courseId]);
 
   const handleQuizComplete = useCallback(
     (passed: boolean, score: number) => {
@@ -62,6 +66,7 @@ export function LessonPlayer({
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [nextLesson, courseId]
   );
 
@@ -216,45 +221,45 @@ export function LessonPlayer({
           {/* ── VIDEO ── */}
           {currentLesson.type === "VIDEO" && (
             <div>
-              {/* Video placeholder */}
-              <div
-                className="w-full aspect-video flex flex-col items-center justify-center relative"
-                style={{ background: "#111" }}
-              >
-                {/* Gradient bg simulating video */}
+              {currentLesson.youtubeUrl ? (
+                /* YouTube player */
+                <YouTubePlayer url={currentLesson.youtubeUrl} title={currentLesson.title} />
+              ) : (
+                /* Placeholder — ยังไม่มี YouTube URL */
                 <div
-                  className="absolute inset-0 opacity-30"
-                  style={{ background: THUMB_GRADIENTS["tech"] }}
-                />
-                <div className="relative z-10 flex flex-col items-center gap-4">
+                  className="w-full aspect-video flex flex-col items-center justify-center relative"
+                  style={{ background: "#111" }}
+                >
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
-                    style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
-                  >
-                    <svg viewBox="0 0 24 24" className="w-10 h-10" fill="white">
-                      <polygon points="8,5 19,12 8,19"/>
+                    className="absolute inset-0 opacity-20"
+                    style={{ background: THUMB_GRADIENTS["tech"] }}
+                  />
+                  <div className="relative z-10 flex flex-col items-center gap-3 text-center px-6">
+                    <svg viewBox="0 0 48 48" className="w-12 h-12 opacity-40" fill="none" stroke="white" strokeWidth="1.5">
+                      <rect x="4" y="10" width="40" height="28" rx="3"/>
+                      <polygon points="19,17 33,24 19,31" fill="white" stroke="none"/>
                     </svg>
+                    <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      ยังไม่มีวิดีโอ
+                    </p>
+                    <a
+                      href={`/instructor/courses/${courseId}/edit/${currentLesson.id}`}
+                      className="px-4 py-1.5 rounded-full text-xs font-medium transition-colors hover:opacity-80"
+                      style={{ background: "var(--vermilion)", color: "white" }}
+                    >
+                      + เพิ่ม YouTube URL
+                    </a>
                   </div>
-                  <p className="text-sm text-white opacity-60">
-                    {currentLesson.title}
-                  </p>
-                  <span
-                    className="px-3 py-1 rounded-full text-xs font-medium"
-                    style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
-                  >
-                    Mux Video Player จะแสดงที่นี่เมื่อ connect API
-                  </span>
+                  {currentLesson.duration && (
+                    <span
+                      className="absolute bottom-4 right-4 px-2 py-1 rounded text-xs font-mono"
+                      style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
+                    >
+                      {formatDuration(currentLesson.duration)}
+                    </span>
+                  )}
                 </div>
-                {/* Duration badge */}
-                {currentLesson.duration && (
-                  <span
-                    className="absolute bottom-4 right-4 px-2 py-1 rounded text-xs font-mono"
-                    style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
-                  >
-                    {formatDuration(currentLesson.duration)}
-                  </span>
-                )}
-              </div>
+              )}
 
               {/* Below video */}
               <div className="max-w-3xl mx-auto px-6 py-8">
@@ -355,6 +360,7 @@ export function LessonPlayer({
                 quiz={currentLesson.quiz}
                 lessonTitle={currentLesson.title}
                 onComplete={handleQuizComplete}
+                userId={userId}
               />
             </div>
           )}

@@ -43,12 +43,12 @@ function SendIcon() {
 
 // ─── Course card inside chat ──────────────────────────────────────────────────
 function CoursePill({ course }: { course: (typeof MOCK_COURSES)[0] }) {
-  const price = course.price === 0 ? "ฟรี" : `฿${course.price.toLocaleString()}`;
+  const price = !course.price || course.price === 0 ? "ฟรี" : `฿${course.price.toLocaleString()}`;
   return (
     <div className="chatbot-course-pill">
       <span className="chatbot-course-title">{course.title}</span>
       <span className="chatbot-course-meta">
-        {course.category.name} · {price} · ⭐ {course.averageRating}
+        {course.category?.name} · {price} · ⭐ {course.averageRating}
       </span>
     </div>
   );
