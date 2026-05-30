@@ -22,13 +22,13 @@
   "exclude": [
     "node_modules",
     "lib/auth.ts",
-    "lib/db.ts",
     "lib/inngest.ts",
     "lib/meilisearch.ts",
     "lib/mux.ts",
     "lib/redis.ts",
     "lib/resend.ts",
     "lib/s3.ts",
-    "lib/stripe.ts"
+    "lib/stripe.ts",
+    "prisma.config.ts"
   ]
 }
