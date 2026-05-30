@@ -1,15 +1,8 @@
 import { defineConfig } from "prisma/config";
-import "dotenv/config";
 
+// Prisma v7 config — connection URL is passed to PrismaClient at runtime.
+// For migrations: set DATABASE_URL env var and run `npx prisma db push`.
 export default defineConfig({
   earlyAccess: true,
   schema: "prisma/schema.prisma",
-  migrate: {
-    async adapter() {
-      const { PrismaNeon } = await import("@prisma/adapter-neon");
-      const { Pool } = await import("@neondatabase/serverless");
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
-      return new PrismaNeon(pool);
-    },
-  },
 });
