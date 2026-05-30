@@ -196,6 +196,7 @@ model Lesson {
   isFree        Boolean    @default(false)
   muxAssetId    String?
   muxPlaybackId String?
+  youtubeUrl    String?
   s3Key         String?
   content       String?    @db.Text
   createdAt     DateTime   @default(now())

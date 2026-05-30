@@ -7,6 +7,13 @@ export {
   MOCK_ENROLLMENTS,
 } from "./lessons";
 export type { MockChapter, MockLesson, MockQuiz, MockQuestion } from "./lessons";
+export {
+  MOCK_WEBBOARD_POSTS,
+  MOCK_WEBBOARD_REPLIES,
+  CATEGORY_LABEL,
+  CATEGORY_COLOR,
+} from "./webboard";
+export type { WebboardPost, WebboardReply, WebboardCategory } from "./webboard";
 
 // Categories derived from courses
 export const MOCK_CATEGORIES = [

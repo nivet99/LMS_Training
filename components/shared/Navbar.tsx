@@ -7,9 +7,10 @@ import { signOutUser } from "@/actions/auth/signout";
 import type { MockSession } from "@/lib/session";
 
 const NAV_LINKS = [
-  { href: "/courses",     label: "คอร์สทั้งหมด" },
+  { href: "/courses",   label: "คอร์สทั้งหมด" },
+  { href: "/webboard",  label: "Webboard" },
   { href: "/instructors", label: "ผู้สอน" },
-  { href: "/pricing",     label: "แผนราคา" },
+  { href: "/pricing",   label: "แผนราคา" },
 ];
 
 interface NavbarProps {

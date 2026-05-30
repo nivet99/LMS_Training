@@ -35,8 +35,29 @@ export const ReorderLessonsSchema = z.object({
   orderedIds: z.array(z.string().cuid()),
 });
 
-export type CreateCourseInput  = z.infer<typeof CreateCourseSchema>;
-export type UpdateCourseInput  = z.infer<typeof UpdateCourseSchema>;
-export type CreateChapterInput = z.infer<typeof CreateChapterSchema>;
-export type CreateLessonInput  = z.infer<typeof CreateLessonSchema>;
-export type ReorderLessonsInput = z.infer<typeof ReorderLessonsSchema>;
+const youtubeUrlRegex =
+  /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+
+export const UpdateLessonContentSchema = z.object({
+  lessonId:   z.string().min(1, "Lesson ID ไม่ถูกต้อง"),
+  courseId:   z.string().min(1, "Course ID ไม่ถูกต้อง"),
+  title:      z.string().min(2, "ชื่อบทเรียนต้องมีอย่างน้อย 2 ตัวอักษร").max(200),
+  type:       z.enum(["VIDEO", "TEXT", "QUIZ"]),
+  youtubeUrl: z
+    .string()
+    .optional()
+    .refine(
+      (url) => !url || youtubeUrlRegex.test(url),
+      "รูปแบบ YouTube URL ไม่ถูกต้อง (ต้องเป็น youtube.com/watch?v=... หรือ youtu.be/...)"
+    ),
+  content:    z.string().max(50000).optional(),
+  isFree:     z.boolean().default(false),
+  duration:   z.number().int().min(0).optional(),
+});
+
+export type CreateCourseInput        = z.infer<typeof CreateCourseSchema>;
+export type UpdateCourseInput        = z.infer<typeof UpdateCourseSchema>;
+export type CreateChapterInput       = z.infer<typeof CreateChapterSchema>;
+export type CreateLessonInput        = z.infer<typeof CreateLessonSchema>;
+export type ReorderLessonsInput      = z.infer<typeof ReorderLessonsSchema>;
+export type UpdateLessonContentInput = z.infer<typeof UpdateLessonContentSchema>;
